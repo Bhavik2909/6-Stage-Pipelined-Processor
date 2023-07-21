@@ -1,0 +1,165 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+library ieee;
+use work.Gates.all;
+
+entity main is
+ port (clk : in std_logic;
+       rst : in std_logic;
+ )  
+end main;
+
+architecture behave of main is 
+
+component IFF is
+port(PC_WREN: in std_logic;
+     PC_IN: IN std_logic_vector(15 DOWNTO 0);
+     CLK, reset: in std_logic;
+     
+     PC_CURRENT_IF_OUT : OUT std_logic_vector(15 DOWNTO 0);
+     INST_IF_OUT : OUT std_logic_vector(15 DOWNTO 0);
+     PC_NEXT_IF_OUT: OUT std_logic_vector(15 DOWNTO 0);
+     PC_CURRENT2_IF_OUT : OUT std_logic_vector(15 DOWNTO 0)
+     );
+end component IFF;
+  
+component IFF_ID is 
+    port (r64_in: in std_logic_vector(63 downto 0); -- remember to change the number of bits of the input and check for all the pipeline registers
+        clk,en64,rst: in std_logic;
+        r64_out: out std_logic_vector(63 downto 0));
+end component IFF_ID;
+
+component id is
+    port(
+        clk,rst: in std_logic;
+        inst_id_in, pc_current_id_in, pc_next_id_in, pc_current2_id_in: in std_logic_vector(15 downto 0);
+        inst_id_out, pc_current_id_out, pc_current2_id_out, pc_next_id_out: out std_logic_vector(15 downto 0);
+        a1_add_id_out,a2_add_id_out,a3_add_id_out: out std_logic_vector(2 downto 0);
+        rf_we_id_out,dm_we_id_out,dm_re_id_out,m1_sl_id_out, ex_t1_e_id_out, pc_write_id_out: out std_logic;
+        m2_sl_id_out,m3_sl_id_out: out std_logic_vector(1 downto 0);
+        m6_sl_id_out, m8_sl_id_out, m9_sl_id_out, m10_sl_id_out: out std_logic;
+        m7_sl_id_out, m_ex_sl_id_out, m_mem_sl_id_out: out std_logic_vector(1 downto 0)
+    );
+end component id;
+
+component ID_rr is 
+    port (r92_in: in std_logic_vector(91 downto 0);
+        clk,en92,rst: in std_logic;
+        r92_out: out std_logic_vector(91 downto 0));
+end component ID_rr;
+
+component rr  is
+  port (
+	-- inputs
+	rf_we_wb_out, clk, rst, st_en_id : in std_logic ;
+	a1_add_rr_in, a2_add_rr_in, a3_add_wb_out, a3_add_rr_in : in std_logic_vector(2 downto 0);
+	rf_d3_wb_out : in std_logic_vector(15 downto 0);
+	rf_we_rr_in, dm_we_rr_in, dm_re_rr_in, m1_sl_rr_in, m6_sl_rr_in : in std_logic;
+	notclear_rr_in : in std_logic;
+	m2_sl_rr_in, m7_sl_rr_in, m4_sl_rr_in, m3_sl_rr_in, m5_sl_rr_in : in std_logic_vector(1 downto 0);
+	m_mem_sl_rr_in, m_ex_sl_rr_in : in std_logic_vector(1 downto 0);
+	inst_rr_in : in std_logic_vector(15 downto 0);
+	pc_current_rr_in, pc_current2_rr_in : in std_logic_vector(15 downto 0);
+	mem_fwd_rr_in, ex_fwd_rr_in : in std_logic_vector(15 downto 0);
+	pc_next_rr_in : in std_logic_vector(15 downto 0);
+	m8_sl_rr_in, m9_sl_rr_in, m10_sl_rr_in: in std_logic;
+	ex_t1_e_rr_in: in std_logic;
+  
+
+	-- outputs
+	rf_d1_rr_out, rf_d2_rr_out, d2_comp_rr_out, se6_rr_out, se9_rr_out, shift_rr_out : out std_logic_vector(15 downto 0);
+	m1_sl_rr_out, dm_we_rr_out, dm_re_rr_out, rf_we_rr_out, st_en_rr_out, m6_sl_rr_out : out std_logic;
+	m2_sl_rr_out, m7_sl_rr_out, m3_sl_rr_out : out std_logic_vector(1 downto 0);
+	a3_add_rr_out : out std_logic_vector(2 downto 0);
+	inst_rr_out : out std_logic_vector(15 downto 0);
+	pc_next_rr_out : out std_logic_vector(15 downto 0);
+	m_mem_sl_rr_out, m_ex_sl_rr_out : out std_logic_vector(1 downto 0);
+	pc_current_rr_out, pc_current2_rr_out : out std_logic_vector(15 downto 0);
+	m8_sl_rr_out, m9_sl_rr_out, m10_sl_rr_out: in std_logic;
+	ex_t1_e_rr_out: in std_logic
+	);
+end component rr;
+
+component rr_EXE is 
+    port (r183_in: in std_logic_vector(182 downto 0);
+        clk,en183,rst: in std_logic;
+        r183_out: out std_logic_vector(182 downto 0));
+end component rr_EXE;
+
+signal IFF_out: std_logic_vector(63 downto 0);
+signal ID_in: std_logic_vector(63 downto 0);		
+signal ID_out: std_logic_vector(91 downto 0);	
+signal rr_in : std_logic_vector(91 downto 0);
+signal rr_out : std_logic_vector(182 downto 0);
+signal EXE_in : std_logic_vector(182 downto 0);
+
+
+begin 
+
+  IFF1 : IFF
+  port map(PC_WREN => pc_write_id_out , PC_IN => , CLK => clk, reset => rst, --check for PC_WREN 
+           PC_CURRENT_IF_OUT => IFF_out(63 downto 48),
+			  INST_IF_OUT => IFF_out(47 downto 32),
+			  PC_NEXT_IF_OUT => IFF_out(31 downto 16),
+			  PC_CURRENT2_IF_OUT => IFF_out(15 downto 0));
+  
+  IFF_ID1 : IFF_ID			  
+  port map(r64_in => IFF_out, clk => clk, rst => rst, r64_out => ID_in, en64 => ); -- check for en64			  
+			  
+  id1 : ID
+  port map(clk => clk, rst => rst,
+           inst_id_in => ID_in(47 downto 32), pc_current_id_in => ID_in(63 downto 48),
+			  pc_next_id_in => ID_in(31 downto 16), pc_current2_id_in => ID_in(15 downto 0),
+			  inst_id_out => ID_out(91 downto 76), pc_current_id_out => ID_out(75 downto 60),
+			  pc_current2_id_out => ID_out(59 downto 44), pc_next_id_out => ID_out(43 downto 28),
+			  a1_add_id_out => ID_out(27 downto 25), a2_add_id_out => ID_out(24 downto 22), a3_add_id_out => ID_out(21 downto 19),
+			  rf_we_id_out => ID_out(18),dm_we_id_out => ID_out(17), dm_re_id_out => ID_out(16), m1_sl_id_out => ID_out(15),
+			  ex_t1_e_id_out => ID_out(14), m2_sl_id_out => ID_out(13 downto 12), m3_sl_id_out => ID_out(11 downto 10),
+			  m6_sl_id_out => ID_out(9), m8_sl_id_out => ID_out(8), m9_sl_id_out => ID_out(7), m10_sl_id_out => ID_out(6),
+			  m7_sl_id_out => ID_out(5 downto 4), m_ex_sl_id_out => ID_out(3 downto 2), m_mem_sl_id_out => ID_out(1 downto 0));
+			  
+  IDD_rr1 : IDD_rr
+  port map(r92_in => ID_out, clk => clk, rst => rst,
+           r92_out => rr_in, en92 =>  );
+			  
+  rr1 : rr
+  port map(--inputs
+           clk => clk, rst => rst, rf_we_wb_out => , st_en_id => ,
+           a1_add_rr_in => rr_in(27 downto 25), a2_add_rr_in => rr_in(24 downto 22), a3_add_rr_in => rr_in(21 downto 19),
+			  a3_add_wb_out => , rf_d3_wb_out => , rf_we_rr_in => rr_in(18) , dm_we_rr_in => rr_in(17), dm_re_rr_in => rr_in(16), 
+			  m1_sl_rr_in => rr_in(15), m6_sl_rr_in => rr_in(9), notclear_rr_in => ,m2_sl_rr_in => rr_in(13 downto 12), 
+			  m7_sl_rr_in => rr_in(5 downto 4), m4_sl_rr_in, => , m3_sl_rr_in => rr_in(11 downto 10),
+			  m5_sl_rr_in => ,m_mem_sl_rr_in => rr_in(1 downto 0), m_ex_sl_rr_in => rr_in(3 downto 2),
+			  inst_rr_in => rr_in(91 downto 76), pc_current_rr_in => rr_in(75 downto 60), pc_current2_rr_in => rr_in(59 downto 44), 
+			  pc_next_rr_in => rr_in(43 downto 28), mem_fwd_rr_in, ex_fwd_rr_in 
+			  m8_sl_rr_in => rr_in(8), m9_sl_rr_in => rr_in(7), m10_sl_rr_in => rr_in(6), ex_t1_e_rr_in => rr_in(14)
+			  --outputs
+			  pc_current_rr_out => rr_out(182 downto 167), pc_current2_rr_out => rr_out(166 downto 151), pc_next_rr_out => rr_out(150 downto 135),
+			  inst_rr_out => rr_out(134 downto 119), rf_d1_rr_out => rr_out(118 downto 103), rf_d2_rr_out => rr_out(102 downto 87), 
+			  d2_comp_rr_out => rr_out(86 downto 71), se6_rr_out => rr_out(70 downto 55), se9_rr_out => rr_out(54 downto 39), 
+			  shift_rr_out => rr_out(38 downto 23), a3_add_rr_out => rr_out(22 downto 20), m1_sl_rr_out => rr_out(19), dm_we_rr_out => rr_out(18),
+			  dm_re_rr_out => rr_out(17), rf_we_rr_out => rr_out(16), st_en_rr_out => rr_out(15), m6_sl_rr_out => rr_out(14), m8_sl_rr_out => rr_out(13), 
+			  m9_sl_rr_out => rr_out(12), m10_sl_rr_out => rr_out(11), ex_t1_e_rr_out => rr_out(10), m2_sl_rr_out => rr_out(9 out 8),
+			  m7_sl_rr_out => rr_out(7 downto 6), m3_sl_rr_out => rr_out(5 downto 4), m_mem_sl_rr_out => rr_out(3 downto 2) ,
+			  m_ex_sl_rr_out => rr_out(1 downto 0)
+			 );
+			
+  rr_EXE1 : rr_EXE			
+  port map(r183_in => rr_out, clk => clk, rst => rst, en183 => , r183_out => EXE_in);
+  
+  
+  
+			  
+		
+
+
+	
+	
+	
+
+  	
+  	
+    
+
+

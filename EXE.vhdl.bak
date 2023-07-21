@@ -1,0 +1,184 @@
+library ieee;
+use ieee.std_logic_1164.all;
+library work;
+use work.Gates.all;
+
+entity EXE is
+    port( 
+        inst_ex_in :in std_logic_vector(15 downto 0);
+        A3_ADD_ex_in :in std_logic_vector(2 downto 0);
+        RF_WE_ex_in : in std_logic;
+        DM_RE_ex_in , DM_WE_ex_in: in std_logic;
+        M2_SL_ex_in, m7_sl_ex_in, m_ex_sl_ex_in, m_mem_sl_ex_in : in std_logic_vector(1 downto 0);
+        M1_SL_ex_in, M3_SL_ex_in, m6_sl_ex_in, m8_sl_ex_in, m10_sl_ex_in, m9_sl_ex_in : in std_logic;
+	    ex_t1_e_ex_in : in std_logic;
+        D2_COMP_ex_in ,SE_9_ex_in, SE_6_ex_in: in std_logic_vector(15 downto 0);
+        RF_D2_ex_in ,RF_D1_ex_in  :in std_logic_vector(15 downto 0);
+        zin_ex_in ,cin_ex_in: in std_logic;
+        clk : in std_logic;
+        reset : in std_logic;
+	    pc_current_ex_in, pc_current2_ex_in : in std_logic_vector(15 downto 0);
+		pc_next_ex_in : in std_logic_vector(15 downto 0);
+		shift_ex_in : in std_logic_vector(15 downto 0);
+        
+        cout_ex_out,zout_ex_out: out std_logic;
+	    notclear_ex_out: out std_logic;
+        RF_D1_EX_out ,RF_D2_EX_out ,ALU1_C_EX_out, alu3_c_ex_out :out std_logic_vector(15 downto 0);
+        M3_SL_EX_out, m9_sl_ex_out :out std_logic;
+		m_mem_sl_ex_out : out std_logic_vector(1 downto 0);
+        RF_WE_EX_out ,DM_RE_EX_out, DM_WE_EX_out: out std_logic;
+        A3_ADD_EX_out :out std_logic_vector(2 downto 0);
+		pc_current2_ex_out : out std_logic_vector(15 downto 0);
+		pc_current_ex_out : out std_logic_vector(15 downto 0);
+		shift_ex_out : out std_logic_vector(15 downto 0);
+		ex_fwd_ex_out : out std_logic_vector(15 downto 0);
+        inst_ex_out :out std_logic_vector(15 downto 0);
+		    c_ex_out : out std_logic;
+			 z_ex_out : out std_logic
+        );
+    end entity EXE;
+
+    architecture yes of exe is
+    component ALU is
+        port( 
+            alu_a : in std_logic_vector(15 downto 0);
+            alu_b : in std_logic_vector(15 downto 0);
+            enable_alu: in std_logic_vector(3 downto 0);
+            carry_add: in std_logic_vector(1 downto 0);
+            Cin: in std_logic;
+            Zin: in std_logic;
+            alu_c : out std_logic_vector(15 downto 0);
+            Cout : out std_logic;
+            Zout : out std_logic
+                );
+        
+        end COMPONENT ALU;
+	
+	COMPONENT alu_branch is
+		port( 
+			alu_a : in std_logic_vector(15 downto 0);
+			alu_imm : in std_logic_vector(15 downto 0);
+			alu_sum2 : out std_logic_vector(15 downto 0)
+				);
+		end COMPONENT alu_branch ;
+
+
+        component MUX_2x1_16b is
+            port (
+             d : out std_logic_vector(15 downto 0);
+             a : in std_logic;
+             r1, r2: in std_logic_vector(15 downto 0)
+             );
+         end COMPONENT MUX_2x1_16b ;
+
+         component MUX_4x1_16b is
+            port (
+             d : out std_logic_vector(15 downto 0);
+             a : in std_logic_vector(1 downto 0);
+             r1, r2, r3, r4: in std_logic_vector(15 downto 0)
+             );
+         end component MUX_4x1_16b ;
+
+		component reg_1b is 
+    			port (d_in: in std_logic;
+        			clk,en,rst: in std_logic;
+        			d_out: out std_logic);
+		end component reg_1b;
+
+		component reg is 
+    			port (d_in: in std_logic_vector(15 downto 0);
+        			clk,en,rst: in std_logic;
+        			d_out: out std_logic_vector(15 downto 0));
+		end component reg;
+		
+		component alu_add is
+				port( 
+					alu_a : in std_logic_vector(15 downto 0);
+					alu_b : in std_logic_vector(15 downto 0);
+					alu_c : out std_logic_vector(15 downto 0)
+					);
+		end component alu_add ;
+
+         
+    signal alu_a, alu_b, alu_br1, pc_br1, alu1_out1, m_ex_fwd_r4, m8_out_3, m10_out_3, alu3_out : std_logic_vector(15 downto 0);
+	signal ex_t1_out : std_logic_vector(15 downto 0) := "0000000000000000";
+
+	signal c1, z1, c1orz1 : std_logic;
+    
+    begin
+    m1: MUX_2X1_16b 
+      port map(r1=>RF_D1_ex_in, r2=>RF_D2_ex_in, a=>M1_SL_ex_in, d=>alu_a);
+
+    m2: MUX_4x1_16b
+       PORT MAP(r1=>RF_D2_ex_in, r2=>SE_6_ex_in, r3=>SE_9_ex_in, r4=>D2_COMP_ex_in, a=>M2_SL_ex_in, d=>alu_b);
+
+	m6: MUX_2X1_16b 
+      port map(r1=> SE_9_ex_in, r2=>SE_6_ex_in, a=> m6_sl_ex_in, d=>alu_br1);
+
+    alu_main : ALU
+     PORT MAP(alu_a=>alu_a, alu_b=>alu_b, enable_alu=>inst_ex_in(15 downto 12), carry_add=>inst_ex_in(15 downto 14), 
+			 alu_c=>alu1_out1,cin=>cin_ex_in,cout=>c1,zin=>zin_ex_in,zout=> z1);
+
+	ALU1_C_EX_out <= alu1_out1;
+     M3_SL_EX_out <= M3_SL_ex_in;
+     m9_sl_ex_out <= m9_sl_ex_in;
+     DM_WE_EX_out <= DM_WE_ex_in;
+     DM_RE_EX_out<= DM_RE_ex_in;
+     RF_WE_EX_out <=RF_WE_ex_in;
+     A3_ADD_EX_out <= A3_ADD_ex_in;
+     inst_ex_out <= inst_ex_in;
+     RF_D1_EX_out <= RF_D1_ex_in;
+     RF_D2_EX_out <= RF_D2_ex_in;
+
+	m_mem_sl_ex_out <= m_mem_sl_ex_in ;
+
+	pc_current2_ex_out <= pc_current2_ex_in;
+	shift_ex_out <= shift_ex_in;
+	 
+	alu_2_1: alu_branch port map(alu_a => pc_current_ex_in, alu_imm => alu_br1, alu_sum2 => pc_br1);
+	
+	m7: MUX_4X1_16b 
+      port map(r1=> pc_next_ex_in, r2=>pc_br1, r3=>RF_D2_ex_in, r4=> alu1_out1, a=> m7_sl_ex_in, d=>pc_current_ex_out);
+
+	OR3 : OR_2  port map(A => c1, B=> z1, Y => c1orz1);
+
+	cflag_reg : reg_1b port map(d_in => c1, clk => clk, en => '1', rst => reset, d_out => cout_ex_out);
+	zflag_reg : reg_1b port map(d_in => z1, clk => clk, en => '1', rst => reset, d_out => zout_ex_out);
+	
+	c_ex_out <= c1;
+	z_ex_out <= z1;
+	m_ex : MUX_4X1_16b 
+      port map(r1=> alu1_out1, r2=>shift_ex_in, r3=>pc_current2_ex_in, r4=> m_ex_fwd_r4, a=> m_ex_sl_ex_in, d=>ex_fwd_ex_out);
+
+	m8: MUX_2X1_16b 
+      port map(r1=> "0000000000000000", r2=>"0000000000000001", a=> m8_sl_ex_in, d=>m8_out_3 );
+
+	m10: MUX_2X1_16b 
+      port map(r1=> ex_t1_out, r2=>RF_D1_ex_in, a=> m10_sl_ex_in, d=>m10_out_3 );
+
+	alu_3: alu_add port map(alu_a=>m10_out_3, alu_b=>m8_out_3 , alu_c=> alu3_out);
+
+	ex_t1_reg : reg port map(d_in=>alu3_out,
+        clk=>clk, en=>ex_t1_e_ex_in, rst=> reset,
+        d_out=>ex_t1_out);
+
+    alu3_c_ex_out <= alu3_out;
+
+	branch_proc: process(c1orz1,inst_ex_in)
+	begin
+	
+	if (inst_ex_in(15 downto 14)="11") then
+		notclear_ex_out <= '0';
+	
+	elsif (inst_ex_in(15)='1') then
+		if (c1orz1='1') then
+			notclear_ex_out <= '0';
+		else 
+			notclear_ex_out <= '1';
+		end if;
+	else
+		notclear_ex_out <= '1';
+	end if;
+	end process;
+
+    end yes;

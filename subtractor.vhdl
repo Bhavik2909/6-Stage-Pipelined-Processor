@@ -1,0 +1,71 @@
+library ieee;
+use ieee.std_logic_1164.all;
+library work;
+use work.Gates.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity subtractor is
+    port(
+        A ,B:in std_logic_vector(15 downto 0);
+        S : out std_logic_vector(15 downto 0);
+        c_temp :OUT std_logic
+    );
+    end entity subtractor;
+
+    architecture first of subtractor is
+    signal c: std_logic_vector(15 downto 0);
+	 begin
+    
+    S(0) <= A(0) xor B(0);
+    C(0) <= B(0) and (not(A(0)));
+    
+    S(1) <= (A(1) xor B(1)) xor C(0);
+    C(1) <= (B(1) and (not A(1))) OR (C(0) and not(A(1) xor B(1)));
+
+    S(2) <= (A(2) xor B(2)) xor C(1);
+    C(2) <= (B(2) and (not A(2))) OR (C(1) and not(A(2) xor B(2)));
+
+    S(3) <= (A(3) xor B(3)) xor C(2);
+    C(3) <= (B(3) and (not A(3))) OR (C(2) and not(A(3) xor B(3)));
+
+    S(4) <= (A(4) xor B(4)) xor C(3);
+    C(4) <= (B(4) and (not A(4))) OR (C(3) and not(A(4) xor B(4)));
+
+    S(5) <= (A(5) xor B(5)) xor C(4);
+    C(5) <= (B(5) and (not A(5))) OR (C(4) and not(A(5) xor B(5)));
+
+    S(6) <= (A(6) xor B(6)) xor C(5);
+    C(6) <= (B(6) and (not A(6))) OR (C(5) and not(A(6) xor B(6)));
+
+    S(7) <= (A(7) xor B(7)) xor C(6);
+    C(7) <= (B(7) and (not A(7))) OR (C(6) and not(A(7) xor B(7)));
+
+    S(8) <= (A(8) xor B(8)) xor C(7);
+    C(8) <= (B(8) and (not A(8))) OR (C(7) and not(A(8) xor B(8)));
+
+    S(9) <= (A(9) xor B(9)) xor C(8);
+    C(9) <= (B(9) and (not A(9))) OR (C(8) and not(A(9) xor B(9)));
+
+    S(10) <= (A(10) xor B(10)) xor C(9);
+    C(10) <= (B(10) and (not A(10))) OR (C(9) and not(A(10) xor B(10)));
+
+    S(11) <= (A(11) xor B(11)) xor C(10);
+    C(11) <= (B(11) and (not A(11))) OR (C(10) and not(A(11) xor B(11)));
+
+    S(12) <= (A(12) xor B(12)) xor C(11);
+    C(12) <= (B(12) and (not A(12))) OR (C(11) and not(A(12) xor B(12)));
+
+    S(13) <= (A(13) xor B(13)) xor C(12);
+    C(13) <= (B(13) and (not A(13))) OR (C(12) and not(A(13) xor B(13)));
+
+    S(14) <= (A(14) xor B(14)) xor C(13);
+    C(14) <= (B(14) and (not A(14))) OR (C(13) and not(A(14) xor B(14)));
+
+    S(15) <= (A(15) xor B(15)) xor C(14);
+    C(15) <= (B(15) and (not A(15))) OR (C(14) and not(A(15) xor B(15)));
+
+    C_temp <= c(15);
+ 
+    end first;

@@ -1,0 +1,414 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+
+entity inst_decode is
+    port(
+        clk,rst: in std_logic;
+        inst_if, pc_current_if, pc_next_if, pc_current2_if: in std_logic_vector(15 downto 0);
+        inst_id, pc_current_id, pc_current2_id, pc_next_id: out std_logic_vector(15 downto 0);
+        a1_add_id,a2_add_id,a3_add_id: out std_logic_vector(2 downto 0);
+        rf_we_id,dm_we_id,dm_re_id,m1_sl_id, ex_t1_e_id: out std_logic;
+        m2_sl_id,m3_sl_id: out std_logic(1 downto 0);
+        m6_sl_rr, m8_sl_id, m9_sl_id, m10_sl_id: out std_logic;
+        m7_sl_rr, m_ex_sl_id, m_mem_sl_id: out std_logic_vector(1 downto 0);
+    );
+end entity inst_decode;
+
+architecture behave of inst_decode is
+component pe is 
+    port( I : in std_logic_vector(7 downto 0);
+		Y : out std_logic_vector(7 downto 0);
+		A : out std_logic_vector(2 downto 0)
+	);
+end component pe;
+
+component reg1 is 
+    port (r1_in: in std_logic;
+        clk,en1,rst: in std_logic;
+        r1_out: out std_logic);
+end component reg1;
+
+component reg3 is 
+    port (r3_in: in std_logic_vector(2 downto 0);
+        clk,en3,rst: in std_logic;
+        r3_out: out std_logic_vector(2 downto 0));
+end component reg3;
+
+component reg8 is 
+    port (r8_in: in std_logic_vector(7 downto 0);
+        clk,en8,rst: in std_logic;
+        r8_out: out std_logic_vector(7 downto 0));
+end component reg8;
+
+signal r8_in_temp, r8_out_temp: std_logic_vector(7 downto 0);
+signal en8_temp, en3_temp, en1_temp: std_logic;
+signal r3_in_temp, r3_out_temp, A_temp: std_logic_vector(2 downto 0);
+signal r1_in_temp, r1_out_temp: std_logic;
+signal I_temp, Y_temp: std_logic(7 downto 0);
+
+begin
+    pc_current_id <= pc_current_if;
+    pc_next_id <= pc_next_if;
+    pc_current2_id <= pc_current2_if;
+    inst_id<=inst_if;
+    process(inst_if,clk)
+    begin
+        case (inst_if(15 downto 12)) is
+            when ("0001") =>    --ADD
+                a1_add_id <= inst_if(11 downto 9);
+                a2_add_id <= inst_if(8 downto 6);
+                a3_add_id <= isnt_if(5 downto 3);
+                rf_we_id <= '1';    --Have to edit this according to the carry and zero flag
+                dm_we_id <= '0';
+                dm_re_id <= '0';
+                m1_sl_id <= '0';
+                if (inst_if(2) = '1') then
+                    m2_sl_id <= "11";
+                else
+                    m2_sl_id <= "00";
+                end if;
+                m3_sl_id <= "01";
+                m6_sl_rr <= '0';
+                m7_sl_rr <= '00';
+                m_ex_sl_id <= "00";
+                m_mem_sl_id <= "01";
+            when ("0010") =>    --NAND  
+                a1_add_id <= inst_if(11 downto 9);
+                a2_add_id <= inst_if(8 downto 6);
+                a3_add_id <= isnt_if(5 downto 3);
+                rf_we_id <= '1';    --Have to edit this according to the carry and zero flag
+                dm_we_id <= '0';
+                dm_re_id <= '0';
+                m1_sl_id <= '0';
+                if (inst_if(2) = '1') then
+                    m2_sl_id <= "11";
+                else
+                    m2_sl_id <= "00";
+                end if;
+                m3_sl_id <= "01";
+                m6_sl_rr <= '0';    --Don't Care Condition
+                m7_sl_rr <= '00';
+            when ("0000") =>    --ADI
+                a1_add_id <= inst_if(11 downto 9);
+                a2_add_id <= "000"; --Don't Care Condition
+                a3_add_id <= inst_if(8 downto 6);
+                rf_we_id <= '1';
+                dm_we_id <= '0';
+                dm_re_id <= '0';
+                m1_sl_id <= '0';
+                m2_sl_id <= "01";
+                m3_sl_id <= "01";
+                m6_sl_rr <= '0';    --Don't Care Condition
+                m7_sl_rr <= '00';
+            when ("0011") =>    --LLI
+                a1_add_id <= "000"; --Don't Care Condition
+                a2_add_id <= "000"; --Don't Care Condition
+                a3_add_id <= inst_if(11 downto 9);
+                rf_we_id <= '1';
+                dm_we_id <= '0';
+                dm_re_id <= '0';
+                m1_sl_id <= '0';    --Don't Care Condition
+                m2_sl_id <= "10";   --Why is this 10 please think over it?
+                m3_sl_id <= "10";
+                m6_sl_rr <= '0';    --Don't Care Condition
+                m7_sl_rr <= '00';
+            when ("0100") =>    --LW
+                a1_add_id <= "000"; --Don't Care Condition
+                a2_add_id <= inst_if(8 downto 6);
+                a3_add_id <= inst_if(11 downto 9);
+                rf_we_id <= '1';
+                dm_we_id <= '0';
+                dm_re_id <= '1';
+                m1_sl_id <= '1';    --Here mux 9 will be 0
+                m2_sl_id <= '01';
+                m3_sl_id <= "00";
+                m6_sl_rr <= '0';    --Don't Care Condition
+                m7_sl_rr <= '00';
+            when ("0101") =>    --SW
+                a1_add_id <= inst_if(8 downto 6);
+                a2_add_id <= inst_if(11 downto 9);
+                a3_add_id <= "000";
+                rf_we_id <= '0';
+                dm_we_id <= '1';
+                dm_re_id <= '0';
+                m1_sl_id <= '0';    --Here mux 9 will be 0
+                m2_sl_id <= "01";
+                m3_sl_id <= "00";   --Don't Care Condition
+                m6_sl_rr <= '0';    --Don't Care Condition
+                m7_sl_rr <= '00';
+            when ("1000") =>  --BEQ
+                a1_add_id <= inst_if(11 downto 9);
+                a2_add_id <= inst_if(8 downto 6);
+                a3_add_id <= "000"; --Don't Care Condition
+                rf_we_id <= '0';
+                dm_we_id <= '0';
+                dm_re_id <= '0';
+                m1_sl_id <= '0';
+                m2_sl_id <= '00';
+                m3_sl_id <= "00";   --Don't Care Condition
+                m6_sl_rr <= '1';    
+                m7_sl_rr <= '00';    --Need to modify this condition in the execution stage
+            when ("1001") =>    --BLT
+                a1_add_id <= inst_if(11 downto 9);
+                a2_add_id <= inst_if(8 downto 6);
+                a3_add_id <= "000"; --Don't Care Condition
+                rf_we_id <= '0';
+                dm_we_id <= '0';
+                dm_re_id <= '0';
+                m1_sl_id <= '0';
+                m2_sl_id <= '00';
+                m3_sl_id <= "00";   --Don't Care Condition
+                m6_sl_rr <= '1';   
+                m7_sl_rr <= '00';     --Need to modify this condition in the execution stage
+            when ("1011") =>    --BLE
+                a1_add_id <= inst_if(11 downto 9);
+                a2_add_id <= inst_if(8 downto 6);
+                a3_add_id <= "000"; --Don't Care Condition
+                rf_we_id <= '0';
+                dm_we_id <= '0';
+                dm_re_id <= '0';
+                m1_sl_id <= '0';
+                m2_sl_id <= '00';
+                m3_sl_id <= "00";   --Don't Care Condition
+                m6_sl_rr <= '1';    
+                m7_sl_rr <= '00';    --Need to modify this condition in the execution stage
+            when ("1100") =>    --JAL
+                a1_add_id <= "000"; --Don't Care Condition
+                a2_add_id <= "000"; --Don't Care Condition
+                a3_add_id <= inst_if(11 downto 9);
+                rf_we_id <= '1';   
+                dm_we_id <= '0';
+                dm_re_id <= '0';
+                m1_sl_id <= '0';    --Don't care condition
+                m2_sl_id <= "00";   --Don't care condition
+                m3_sl_id <= "11";
+                m6_sl_rr <= '0';
+                m7_sl_rr <= '01';
+            when ("1101") =>    --JLR
+                a1_add_id <= "000"; --Don't care condition
+                a2_add_id <= inst_if(8 downto 6);
+                a3_add_id <= inst_if(11 downto 9);
+                rf_we_id <= '1';
+                dm_we_id <= '0';
+                dm_re_id <= '0';
+                m1_sl_id <= '0';    --Don't Care Condition
+                m2_sl_id <= "00";   --Don't Care Condition
+                m3_sl_id <= "11";
+                m6_sl_rr <= '0';    --Don't Care Condition
+                m7_sl_rr <= "10";
+            when ("1111") =>    --JRI
+                a1_add_id <= inst_if(11 downto 9);
+                a2_add_id <= "000"; --Don't care condition
+                a3_add_id <= "000"; --Don't care condition
+                rf_we_id <= '0';
+                dm_we_id <= '0';
+                dm_re_id <= '0';
+                m1_sl_id <= '0';
+                m2_sl_id <= "10";
+                m3_sl_id <= "00";   --Don't care condition
+                m6_sl_id <= '0';    --Don't care condition
+                m7_sl_id <= "11";
+                m8_sl_id <= '0';
+                m9_sl_id <= '0';
+            when ("0110") =>    --LM
+                if(r3_out_temp = '000') then
+                    pc_write_id <= '0';
+                    I_temp <= inst_if(7 downto 0);
+                    en8_temp <= '1';
+                    Y_temp => r8_in_temp;
+                    en3_temp <= '1';
+                    r3_in_temp <= '001';
+                    A_temp => a3_add_id;
+                    a2_add_id <= "000"; --Don't care condition
+                    a1_add_id <= inst_if(11 downto 9);
+                    if (inst_if(0) = '1') then
+                        rf_we_id <= '1';    --Need to correct this according to bits
+                        en1_temp <= '1';
+                        r1_in_temp <= '1';
+                    else
+                        rf_we_id <= '0';
+                        en1_temp <= '0';
+                    end if;
+                    dm_we_id <= '0';
+                    dm_re_id <= '1';
+                    m1_sl_id <= '0';    --Don't care condition
+                    m2_sl_id <= "00";   --Don't care condition
+                    m3_sl_id <= "00";
+                    m6_sl_id <= "00";   --Don't care condition
+                    m7_sl_id <= "00";
+                    m_ex_sl_id <= "00"; --Don't care condition
+                    m_mem_sl_id <= "00";    --Review this one
+                    m8_sl_id <= '0';
+                    m9_sl_id <= '1';
+                    m10_sl_id <= '1';
+                    ex_t1_e_id <= '1';
+                elsif (r3_out_temp = '111') then --PC write ON
+                    I_temp <= r8_out_temp;
+                    en8_temp <= '0';
+                    Y_temp => r8_in_temp;
+                    en3_temp <= '1';
+                    r3_in_temp <= "000";
+                    A_temp => a3_add_id;
+                    a2_add_id <= "000"; --Don't care condition
+                    a1_add_id <= inst_if(11 downto 9);  --Don't care condition
+                    if (inst_if(7) = '1') then
+                        rf_we_id <= '1';
+                        en1_temp <= '1';
+                        r1_in_temp <= '1';
+                    else
+                    rf_we_id <= '0';
+                    en1_temp <= '0';
+                    end if;
+                    dm_we_id <= '0';
+                    dm_re_id <= '1';
+                    m1_sl_id <= '0';    --Don't care condition
+                    m2_sl_id <= "00";   --Don't care condition
+                    m3_sl_id <= "00";
+                    m6_sl_id <= "00";   --Don't care condition
+                    m7_sl_id <= "00";
+                    m_ex_sl_id <= "00"; --Don't care condition
+                    m_mem_sl_id <= "00";    --Review this one
+                    m8_sl_id <= inst_if(conv_integer(7)) and r1_out_temp;
+                    m9_sl_id <= '1';
+                    m10_sl_id <= '0';
+                    ex_t1_e_id <= '1';
+                    pc_write_id <= '1';  
+                else
+                    pc_write_id <= '0';
+                    I_temp <= r8_out_temp;
+                    en8_temp <= '1';
+                    Y_temp => r8_in_temp;
+                    en3_temp <= '1';
+                    r3_in_temp <= r3_out_temp + "001";
+                    A_temp => a3_add_id;
+                    a2_add_id <= "000"; --Don't care condition
+                    a1_add_id <= inst_if(11 downto 9);  --Don't care condition
+                    if (inst_if(conv_integer(r3_out_temp)) = '1') then
+                        rf_we_id <= '1';
+                        en1_temp <= '1';
+                        r1_in_temp <= '1';
+                    else
+                        rf_we_id <= '0';
+                        en1_temp <= '0';
+                    end if;
+                    dm_we_id <= '0';
+                    dm_re_id <= '1';
+                    m1_sl_id <= '0';    --Don't care condition
+                    m2_sl_id <= "00";   --Don't care condition
+                    m3_sl_id <= "00";
+                    m6_sl_id <= "00";   --Don't care condition
+                    m7_sl_id <= "00";
+                    m_ex_sl_id <= "00"; --Don't care condition
+                    m_mem_sl_id <= "00";    --Review this one
+                    m8_sl_id <= inst_if(conv_integer(r3_out_temp)) and r1_out_temp;
+                    m9_sl_id <= '1';
+                    m10_sl_id <= '0';
+                    ex_t1_e_id <= '1';
+                end if; 
+            when ("0111") =>    --SM
+                if (r3_out_temp = "000") then
+                    pc_write_id <= '0';
+                    I_temp <= inst_if(7 downto 0);
+                    en8_temp  <= '1';
+                    Y_temp => r8_in_temp ;
+                    en3_temp <= '1';
+                    r3_in_temp <= "001";
+                    A_temp => a2_add_id;
+                    a1_add_id <= inst_if(11 downto 9);
+                    a3_add_id <= "000"; --Don't Care Condition
+                    rf_we_id <= '0';
+                    if (inst_if(0) = '1') then
+                        dm_we_id <= '1';
+                        en1_temp <= '1';
+                        r1_in_temp <= '1';
+                    else
+                        dm_we_id <= '0';
+                        en1_temp <= '0';
+                    end if;
+                    dm_re_id <= '0';
+                    m1_sl_id <= '0';    --Don't care condition
+                    m2_sl_id <= "00";   --Don't care condition
+                    m3_sl_id <= "00";
+                    m6_sl_id <= "00";   --Don't care condition
+                    m7_sl_id <= "00";
+                    m_ex_sl_id <= "00"; --Don't care condition
+                    m_mem_sl_id <= "00";    --Don't Care Condition
+                    m8_sl_id <= '0';
+                    m9_sl_id <= '1';
+                    m10_sl_id <= '1';
+                    ex_t1_e_id <= '1';
+                elsif (r3_out_temp = "111") then
+                    I_temp <= r8_out_temp;
+                    en8_temp <= '0';
+                    Y_temp => r8_in_temp;
+                    en3_temp <= '1';
+                    r3_in_temp <= "000";
+                    A_temp => a2_add_id;
+                    a1_add_id <= inst_if(11 downto 9);  --Don't Care Condition
+                    a3_add_id <= "000"; --Don't Care Condition
+                    rf_we_id <= '0';
+                    if (inst_if(7) = '1') then
+                        dm_we_id <= '1';
+                        en1_temp <= '1';
+                        r1_in_temp <= '1';
+                    else
+                        dm_we_id <= '0';
+                        en1_temp <= '0';
+                    end if;
+                    dm_re_id <= '0';
+                    m1_sl_id <= '0';    --Don't care condition
+                    m2_sl_id <= "00";   --Don't care condition
+                    m3_sl_id <= "00";
+                    m6_sl_id <= "00";   --Don't care condition
+                    m7_sl_id <= "00";
+                    m_ex_sl_id <= "00"; --Don't care condition
+                    m_mem_sl_id <= "00";    --Don't Care Condition
+                    m8_sl_id <= inst_if(conv_integer(7)) and r1_out_temp;
+                    m9_sl_id <= '1';
+                    m10_sl_id <= '0';
+                    ex_t1_e_id <= '1';
+                    pc_write_id <= '1';
+                else
+                    pc_write_id <= '0';
+                    I_temp <= r8_out_temp;
+                    en8_temp <= '1';
+                    Y_temp => r8_in_temp;
+                    en3_temp <= '1';
+                    r3_in_temp <= r3_out_temp + "001";
+                    A_temp => a2_add_id;
+                    a1_add_id <= inst_if(11 downto 9);  --Don't Care Condition
+                    a3_add_id <= "000"; --Don't Care Condition
+                    rf_we_id <= '0';
+                    if (inst_if(conv_integer(r3_out_temp)) = '1') then
+                        dm_we_id <= '1';
+                        en1_temp <= '1';
+                        r1_in_temp <= '1';
+                    else
+                        dm_we_id <= '0';
+                        en1_temp <= '0';
+                    end if;
+                    dm_re_id <= '0';
+                    m1_sl_id <= '0';    --Don't care condition
+                    m2_sl_id <= "00";   --Don't care condition
+                    m3_sl_id <= "00";
+                    m6_sl_id <= "00";   --Don't care condition
+                    m7_sl_id <= "00";
+                    m_ex_sl_id <= "00"; --Don't care condition
+                    m_mem_sl_id <= "00";    --Don't Care Condition
+                    m8_sl_id <= inst_if(conv_integer(r3_out_temp)) and r1_out_temp;
+                    m9_sl_id <= '1';
+                    m10_sl_id <= '0';
+                    ex_t1_e_id <= '1';
+                end if;
+        end case;
+    end process;
+    LMSM_add: reg8
+            port map(r8_in => r8_in_temp, clk => clk, en8 => en8_temp,rst => rst, r8_out => r8_out_temp);
+    LMSM_count: reg3
+            port map(r3_in => r3_in_temp, clk => clk, en3 => en3_temp,rst => rst, r3_out => r3_out_temp);
+    LMSM_add_check: reg1
+            port map(r1_in => r1_in_temp, clk => clk, en1 => en1_temp,rst => rst, r1_out => r1_out_temp);
+    PE: pe
+        port map(I => I_temp, Y => Y_temp, A => A_temp);
+end architecture behave;

@@ -1,0 +1,24 @@
+--Register
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity reg1 is 
+    port (r1_in: in std_logic;
+        clk,en1,rst: in std_logic;
+        r1_out: out std_logic);
+end entity reg1;
+
+architecture behave of reg1 is
+    begin
+    process(clk,r1_in,rst)
+        begin
+		      if(rst = '1') then
+                r1_out <= (others => '0');
+            elsif(clk'event and clk='0') then
+                if(en1 = '1') then
+                    r1_out<=r1_in;
+                end if;
+            end if;
+    end process;
+end architecture behave;

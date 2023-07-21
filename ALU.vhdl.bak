@@ -1,0 +1,117 @@
+library ieee;
+use ieee.std_logic_1164.all;
+library work;
+use work.Gates.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity ALU is
+port( 
+	alu_a : in std_logic_vector(15 downto 0);
+	alu_b : in std_logic_vector(15 downto 0);
+	enable_alu: in std_logic_vector(3 downto 0);
+    carry_add: in std_logic_vector(1 downto 0);
+    Cin: in std_logic;
+    Zin: in std_logic;
+	alu_c : out std_logic_vector(15 downto 0);
+	Cout : out std_logic;
+	Zout : out std_logic
+		);
+
+end entity ALU;
+
+architecture yes of AlU is:
+
+component Nand1 is
+	port(
+			Inp1 : in std_logic_vector(15 downto 0);
+	      Inp2 : in std_logic_vector(15 downto 0);
+	      Outp : out std_logic_vector(15 downto 0)
+	    );
+end component;
+
+component half_adder is
+    port (a, b: in std_logic;
+      sum, carry_out: out std_logic); 
+    end component;
+    
+component subtractor is
+      port(
+          A ,B:in std_logic_vector(15 downto 0);
+          S : out std_logic_vector(15 downto 0);
+          c : out std_logic;
+      );
+      end component subtractor;    
+  
+component full_adder is
+        Port ( A : in STD_LOGIC;
+        B : in STD_LOGIC;
+        Cin : in STD_LOGIC;
+        S : out STD_LOGIC;
+        Cout : out STD_LOGIC);
+       end component;
+
+       signal t1,t2,t3: std_logic_vector(15 downto 0);
+       signal c_temp,carry_flag_temp,c_temp1: std_logic;
+
+begin
+       C1: NAND1
+       port map(inp1 => alu_a, inp2 => alu_b, outp =>t1 ); 
+       C2: full_adder
+       port map(A=>alu_a, B=>alu_b, Cin => carry_flag_temp, S=>t2, Cout=>c_temp);  
+       C3: subtractor
+       port map(A=>alu_a, B=>alu_b, S=>t3 C=>c_temp1);
+
+      ALU_beh : process (1,t2,t3,c_temp,carry_flag_temp,c_temp1,alu_a ,alu_b,enable_alu,carry_add,Cin,Zin,C,t1,t2)
+
+       carry_flag_temp <='0' when enable_alu="0000";
+       carry_flag_temp <= Cin when carry_add="11" and (enable_alu="0001" or enable_alu="0000");
+
+       alu_c <= t1 when (enable_alu="0010" and carry_add ="00") or
+                        (enable_alu="0010" and carry_add ="10" and Cin='1') or
+                        (enable_alu="0010" and carry_add ="01" and Zin='1');
+       alu_c <= t2 when (enable_alu="0001" and carry_add ="00") or
+                        (enable_alu="0001" and carry_add ="10" and Cin='1') or 
+                        (enable_alu="0001" and carry_add ="01" and Zin='1') or
+                        (enable_alu="0001" and carry_add ="11") or
+                        (enable_alu="0000") ;
+       alu_c <= t3 when (enable_alu="1000" or enable_alu="1001" or enable_alu="1011");
+
+       Cout <= C_temp when (enable_alu="0001" or enable_alu="0000");
+       Cout <= C_temp1 when (enable_alu="1001" or enable_alu="1011");
+
+       if (enable_alu="0010" and t1="0000000000000000") or 
+       ((enable_alu="0001" or enable_alu="0000") and t2="0000000000000000") or
+       (enable_alu="1000" and t3="0000000000000000") 
+       then Zout<='1'
+       else Zout<='0';
+       end if;
+    end process;
+end yes;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

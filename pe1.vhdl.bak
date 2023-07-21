@@ -1,0 +1,32 @@
+--Priority_Encoder_Updated_Version
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+
+entity pe is 
+  port( I : in std_logic_vector(7 downto 0);
+        C : in std_logic_vector(2 downto 0);
+		  Y : out std_logic_vector(7 downto 0);
+		  A : out std_logic_vector(2 downto 0)
+	);
+end pe;
+
+architecture Behavioural of pe is
+begin
+  process(I)
+  variable i: integer;
+  variable j: integer;
+  variable m: std_logic_vector(7 downto 0);
+  begin
+      m := I;
+      i <= to_integer(unsigned(C));
+      if I(i) = '1' then 
+      A <= conv_std_logic_vector(i,3);
+      m(i) := '0';
+      end if;
+		exit;
+		Y <= m;
+    end loop;
+  end process;
+end Behavioural;  

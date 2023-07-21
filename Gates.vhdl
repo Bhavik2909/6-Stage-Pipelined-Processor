@@ -1,0 +1,396 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+--A package declaration is used to store a set of common declarations, such as components.
+--These declarations can then be imported into other design units using a use clause.
+
+package Gates is
+  component INVERTER is
+   port (A: in std_logic; Y: out std_logic);
+  end component INVERTER;
+
+  component AND_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component AND_2;
+
+  component NAND_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component NAND_2;
+
+  component OR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component OR_2;
+
+  component NOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component NOR_2;
+
+  component XOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component XOR_2;
+
+  component XNOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component XNOR_2;
+
+  component HALF_ADDER is
+   port (A, B: in std_logic; S, C: out std_logic);
+  end component HALF_ADDER;
+
+  component FULL_ADDER is
+   port (A, B, Cin: in std_logic; S, C: out std_logic);
+  end component FULL_ADDER;
+
+  component DEMUX_1x8_16b is
+   port (d : in std_logic_vector(15 downto 0);
+	a : in std_logic_vector(2 downto 0);
+	r1, r2, r3, r4, r5, r6, r7, r8: out std_logic_vector(15 downto 0));
+  end component DEMUX_1x8_16b ;
+
+  component MUX_8x1_16b is
+   port (d : out std_logic_vector(15 downto 0);
+	a : in std_logic_vector(2 downto 0);
+	r1, r2, r3, r4, r5, r6, r7, r8: in std_logic_vector(15 downto 0));  
+  end component MUX_8x1_16b ;
+
+  component register_og is
+  port (clk, rst, wr_en: in std_logic; 
+	a_in : in std_logic;
+	d_out : out std_logic);
+  end component register_og ;
+
+  component MUX_4x1_16b is
+   port (d : out std_logic_vector(15 downto 0);
+	a : in std_logic_vector(1 downto 0);
+	r1, r2, r3, r4: in std_logic_vector(15 downto 0));  
+  end component MUX_4x1_16b ;
+
+  component MUX_4x1_3b is
+   port (d : out std_logic_vector(2 downto 0);
+	a : in std_logic_vector(1 downto 0);
+	r1, r2, r3, r4: in std_logic_vector(2 downto 0));  
+  end component MUX_4x1_3b ;
+
+  component MUX_2x1_16b is
+   port (d : out std_logic_vector(15 downto 0);
+	a : in std_logic;
+	r1, r2: in std_logic_vector(15 downto 0));  
+  end component MUX_2x1_16b ;
+
+  component MUX_2x1_3b is
+   port (d : out std_logic_vector(2 downto 0);
+	a : in std_logic;
+	r1, r2: in std_logic_vector(2 downto 0));  
+  end component MUX_2x1_3b ;
+
+
+end package Gates;
+
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity INVERTER is
+   port (A: in std_logic; Y: out std_logic);
+end entity INVERTER;
+
+architecture Equations of INVERTER is
+begin
+   Y <= not A;
+end Equations;
+  
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity AND_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity AND_2;
+
+architecture Equations of AND_2 is
+begin
+   Y <= A and B;
+end Equations;
+  
+library ieee;
+use ieee.std_logic_1164.all;
+entity NAND_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity NAND_2;
+
+architecture Equations of NAND_2 is
+begin
+   Y <= not (A and B);
+end Equations;
+  
+library ieee;
+use ieee.std_logic_1164.all;
+entity OR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity OR_2;
+
+architecture Equations of OR_2 is
+begin
+   Y <= A or B;
+end Equations;
+  
+library ieee;
+use ieee.std_logic_1164.all;
+entity NOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity NOR_2;
+
+architecture Equations of NOR_2 is
+begin
+   Y <= not (A or B);
+end Equations;
+  
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity XOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity XOR_2;
+
+architecture Equations of XOR_2 is
+begin
+   Y <= A xor B;
+end Equations;
+  
+library ieee;
+use ieee.std_logic_1164.all;
+entity XNOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity XNOR_2;
+
+architecture Equations of XNOR_2 is
+begin
+   Y <= not (A xor B);
+end Equations;
+  
+library ieee;
+use ieee.std_logic_1164.all;
+entity HALF_ADDER is
+   port (A, B: in std_logic; S, C: out std_logic);
+end entity HALF_ADDER;
+
+architecture Equations of HALF_ADDER is
+begin
+   S <= (A xor B);
+   C <= (A and B);
+end Equations;
+
+library ieee;
+use ieee.std_logic_1164.all;
+--entity FULL_ADDER is
+  -- port (A, B, Cin : in std_logic; S, C: out std_logic);
+--end entity FULL_ADDER;
+
+--architecture Equations of FULL_ADDER is
+--begin
+   --S <= (A xor (B xor Cin));
+   --C <= ((A and B) or (B and Cin) or (A and Cin));
+--end Equations;
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity DEMUX_1x8_16b is
+   port (
+	d : in std_logic_vector(15 downto 0);
+	a : in std_logic_vector(2 downto 0);
+	r1, r2, r3, r4, r5, r6, r7, r8: out std_logic_vector(15 downto 0)
+	);
+end entity DEMUX_1x8_16b ;
+
+architecture Equations of DEMUX_1x8_16b is
+begin
+
+process (a,d)
+	begin
+	if ((a(2)<='0') and (a(1)<='0') and (a(0)<='0')) then
+		r1 <= d;
+	elsif ((a(2)='0') and (a(1)='0') and (a(0)='1')) then
+		r2 <= d;
+	elsif ((a(2)='0') and (a(1)='1') and (a(0)='0')) then
+		r3 <= d;
+	elsif ((a(2)='0') and (a(1)='1') and (a(0)='1')) then
+		r4 <= d;
+	elsif ((a(2)='1') and (a(1)='0') and (a(0)='0')) then
+		r5 <= d;
+	elsif ((a(2)='1') and (a(1)='0') and (a(0)='1')) then
+		r6 <= d;
+	elsif ((a(2)='1') and (a(1)='1') and (a(0)='0')) then
+		r7 <= d;
+	elsif ((a(2)='1') and (a(1)='1') and (a(0)='1')) then
+		r8 <= d;
+	end if;
+
+end process;
+
+end Equations;
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity MUX_8x1_16b is
+   port (
+	d : out std_logic_vector(15 downto 0);
+	a : in std_logic_vector(2 downto 0);
+	r1, r2, r3, r4, r5, r6, r7, r8: in std_logic_vector(15 downto 0)
+	);
+end entity MUX_8x1_16b ;
+
+architecture Equations of MUX_8x1_16b is
+begin
+
+process (a,r1,r2,r3,r4,r5,r6,r7,r8)
+	begin
+	if ((a(2)='0') and (a(1)='0') and (a(0)='0')) then
+		d <= r1;
+	elsif ((a(2)='0') and (a(1)='0') and (a(0)='1')) then
+		d <= r2;
+	elsif ((a(2)='0') and (a(1)='1') and (a(0)='0')) then
+		d <= r3;
+	elsif ((a(2)='0') and (a(1)='1') and (a(0)='1')) then
+		d <= r4;
+	elsif ((a(2)='1') and (a(1)='0') and (a(0)='0')) then
+		d <= r5;
+	elsif ((a(2)='1') and (a(1)='0') and (a(0)='1')) then
+		d <= r6;
+	elsif ((a(2)='1') and (a(1)='1') and (a(0)='0')) then
+		d <= r7;
+	elsif ((a(2)='1') and (a(1)='1') and (a(0)='1')) then
+		d <= r8;
+	end if;
+end process;
+	
+end Equations;
+
+library ieee;
+use ieee.std_logic_1164.all;
+library ieee;
+use work.Gates.all;
+
+entity register_og is
+  port (clk, rst, wr_en: in std_logic; 
+	a_in : in std_logic;
+	d_out : out std_logic);
+end entity register_og ;
+
+architecture Struct of register_og is
+
+begin
+	data_entry	: process(clk, rst, wr_en)
+	begin
+	if (rst='1') then
+		d_out<='0';
+	elsif (clk'event and clk='1') then
+		if (wr_en='1') then
+			d_out<= a_in;
+		end if;
+	end if;
+	end process;
+		
+end Struct;
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity MUX_4x1_16b is
+   port (
+	d : out std_logic_vector(15 downto 0);
+	a : in std_logic_vector(1 downto 0);
+	r1, r2, r3, r4: in std_logic_vector(15 downto 0)
+	);
+end entity MUX_4x1_16b ;
+
+architecture Equations of MUX_4x1_16b is
+begin
+
+process (a,r1,r2,r3,r4)
+	begin
+	if ((a(1)='0') and (a(0)='0')) then
+		d <= r1;
+	elsif ((a(1)='0') and (a(0)='1')) then
+		d <= r2;
+	elsif ((a(1)='1') and (a(0)='0')) then
+		d <= r3;
+	elsif ((a(1)='1') and (a(0)='1')) then
+		d <= r4;
+	end if;
+end process;
+	
+end Equations;
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity MUX_4x1_3b is
+   port (
+	d : out std_logic_vector(2 downto 0);
+	a : in std_logic_vector(1 downto 0);
+	r1, r2, r3, r4: in std_logic_vector(2 downto 0)
+	);
+end entity MUX_4x1_3b ;
+
+architecture Equations of MUX_4x1_3b is
+begin
+
+process (a,r1,r2,r3,r4)
+	begin
+	if ((a(1)='0') and (a(0)='0')) then
+		d <= r1;
+	elsif ((a(1)='0') and (a(0)='1')) then
+		d <= r2;
+	elsif ((a(1)='1') and (a(0)='0')) then
+		d <= r3;
+	elsif ((a(1)='1') and (a(0)='1')) then
+		d <= r4;
+	end if;
+end process;
+	
+end Equations;
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity MUX_2x1_16b is
+   port (
+	d : out std_logic_vector(15 downto 0);
+	a : in std_logic;
+	r1, r2: in std_logic_vector(15 downto 0)
+	);
+end entity MUX_2x1_16b ;
+
+architecture Equations of MUX_2x1_16b is
+begin
+
+process (a,r1,r2)
+	begin
+	if (a='0') then
+		d <= r1;
+	elsif (a='1') then
+		d <= r2;
+	end if;
+end process;
+	
+end Equations;
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity MUX_2x1_3b is
+   port (
+	d : out std_logic_vector(2 downto 0);
+	a : in std_logic;
+	r1, r2: in std_logic_vector(2 downto 0)
+	);
+end entity MUX_2x1_3b ;
+
+architecture Equations of MUX_2x1_3b is
+begin
+
+process (a,r1,r2)
+	begin
+	if (a='0') then
+		d <= r1;
+	elsif (a='1') then
+		d <= r2;
+	end if;
+end process;
+	
+end Equations;
